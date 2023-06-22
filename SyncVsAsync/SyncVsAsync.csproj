@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+<!--<ThreadPoolMinThreads>2</ThreadPoolMinThreads>
+    <ThreadPoolMaxThreads>2</ThreadPoolMaxThreads> -->
+<!--<ThreadPoolMinThreads>1000</ThreadPoolMinThreads>
+    <ThreadPoolMaxThreads>1000</ThreadPoolMaxThreads> -->
+  </PropertyGroup>
+
+</Project>
