@@ -8,24 +8,33 @@ foreach (var upperLimitOfRange in upperLimitsOfRanges)
 {
     var collection = Enumerable.Range(1, upperLimitOfRange);
 
-    var syncExecutionTimeThread = await GetSyncExecutionTimeThread(collection, millisecondsTimeout);
+    var syncExecutionTimeDelayInNewThreads = await GetSyncExecutionTimeDelayInNewThreads(collection, millisecondsTimeout);
 
-    var syncExecutionTimeDelay = await GetSyncExecutionTimeDelay(collection, millisecondsTimeout);
+    var asyncExecutionTimeDelay = await GetAsyncExecutionTimeDelay(collection, millisecondsTimeout);
 
-    var asyncExecutionTime = await GetAsyncExecutionTime(collection, millisecondsTimeout);
+    var asyncExecutionTimeDelayWithExpectation = await GetAsyncExecutionTimeDelayWithExpectation(collection, millisecondsTimeout);
 
-    var asyncExecutionTimeInTasks = await GetAsyncExecutionTimeInTasks(collection, millisecondsTimeout);
+    var asyncExecutionTimeDelayInNewThreads = await GetAsyncExecutionTimeDelayInNewThreads(collection, millisecondsTimeout);
+
+    var asyncExecutionTimeDelayInNewThreadWithExpectation = await GetAsyncExecutionTimeDelayInNewThreadWithExpectation(collection, millisecondsTimeout);
+
+    var syncAndAsyncExecutionTimeDelayInNewThreads = await GetSyncAndAsyncExecutionTimeDelayInNewThreads(collection, millisecondsTimeout);
+
+    var syncAndAsyncExecutionTimeDelayInNewThreadWithExpectation = await GetSyncAndAsyncExecutionTimeDelayInNewThreadWithExpectation(collection, millisecondsTimeout);
 
     Console.WriteLine($"Iterations: {upperLimitOfRange}; " +
-        $"Sync thread: {syncExecutionTimeThread} ms; " +
-        $"Sync delay: {syncExecutionTimeDelay} ms; " +
-        $"Async: {asyncExecutionTime} ms; " +
-        $"Async in tasks: {asyncExecutionTimeInTasks} ms");
+      $"1: {syncExecutionTimeDelayInNewThreads} ms; " +
+      $"2: {asyncExecutionTimeDelay} ms; " +
+      $"3: {asyncExecutionTimeDelayWithExpectation} ms; " +
+      $"4: {asyncExecutionTimeDelayInNewThreads} ms; " +
+      $"5: {asyncExecutionTimeDelayInNewThreadWithExpectation} ms; " +
+      $"6: {syncAndAsyncExecutionTimeDelayInNewThreads} ms; " +
+      $"7: {syncAndAsyncExecutionTimeDelayInNewThreadWithExpectation} ms");
 }
 
 Console.Read();
 
-async Task<long> GetSyncExecutionTimeThread(IEnumerable<int> collection, int millisecondsTimeout)
+async Task<long> GetSyncExecutionTimeDelayInNewThreads(IEnumerable<int> collection, int millisecondsTimeout)
 {
     var executionTimeWithoutAsync = Stopwatch.StartNew();
 
@@ -36,18 +45,18 @@ async Task<long> GetSyncExecutionTimeThread(IEnumerable<int> collection, int mil
     return executionTimeWithoutAsync.ElapsedMilliseconds;
 }
 
-async Task<long> GetSyncExecutionTimeDelay(IEnumerable<int> collection, int millisecondsTimeout)
+async Task<long> GetAsyncExecutionTimeDelay(IEnumerable<int> collection, int millisecondsTimeout)
 {
-    var executionTimeWithoutAsync = Stopwatch.StartNew();
+    var executionTimeWithAsync = Stopwatch.StartNew();
 
-    await Task.WhenAll(collection.Select(_ => Task.Run(() => DelayAsync(millisecondsTimeout))));
+    await Task.WhenAll(collection.Select(_ => DelayAsync(millisecondsTimeout)));
 
-    executionTimeWithoutAsync.Stop();
+    executionTimeWithAsync.Stop();
 
-    return executionTimeWithoutAsync.ElapsedMilliseconds;
+    return executionTimeWithAsync.ElapsedMilliseconds;
 }
 
-async Task<long> GetAsyncExecutionTime(IEnumerable<int> collection, int millisecondsTimeout)
+async Task<long> GetAsyncExecutionTimeDelayWithExpectation(IEnumerable<int> collection, int millisecondsTimeout)
 {
     var executionTimeWithAsync = Stopwatch.StartNew();
 
@@ -58,11 +67,44 @@ async Task<long> GetAsyncExecutionTime(IEnumerable<int> collection, int millisec
     return executionTimeWithAsync.ElapsedMilliseconds;
 }
 
-async Task<long> GetAsyncExecutionTimeInTasks(IEnumerable<int> collection, int millisecondsTimeout)
+async Task<long> GetAsyncExecutionTimeDelayInNewThreads(IEnumerable<int> collection, int millisecondsTimeout)
+{
+    var executionTimeWithoutAsync = Stopwatch.StartNew();
+
+    await Task.WhenAll(collection.Select(_ => Task.Run(() => DelayAsync(millisecondsTimeout))));
+
+    executionTimeWithoutAsync.Stop();
+
+    return executionTimeWithoutAsync.ElapsedMilliseconds;
+}
+
+async Task<long> GetAsyncExecutionTimeDelayInNewThreadWithExpectation(IEnumerable<int> collection, int millisecondsTimeout)
 {
     var executionTimeWithAsync = Stopwatch.StartNew();
 
     await Task.WhenAll(collection.Select(_ => Task.Run(async () => await DelayAsync(millisecondsTimeout).ConfigureAwait(false))));
+
+    executionTimeWithAsync.Stop();
+
+    return executionTimeWithAsync.ElapsedMilliseconds;
+}
+
+async Task<long> GetSyncAndAsyncExecutionTimeDelayInNewThreads(IEnumerable<int> collection, int millisecondsTimeout)
+{
+    var executionTimeWithoutAsync = Stopwatch.StartNew();
+
+    await Task.WhenAll(collection.Select(_ => Task.Run(() => DelaySyncAndAsync(millisecondsTimeout))));
+
+    executionTimeWithoutAsync.Stop();
+
+    return executionTimeWithoutAsync.ElapsedMilliseconds;
+}
+
+async Task<long> GetSyncAndAsyncExecutionTimeDelayInNewThreadWithExpectation(IEnumerable<int> collection, int millisecondsTimeout)
+{
+    var executionTimeWithAsync = Stopwatch.StartNew();
+
+    await Task.WhenAll(collection.Select(_ => Task.Run(async () => await DelaySyncAndAsync(millisecondsTimeout).ConfigureAwait(false))));
 
     executionTimeWithAsync.Stop();
 
@@ -77,6 +119,13 @@ bool Delay(int millisecondsTimeout)
 
 async Task<bool> DelayAsync(int millisecondsTimeout)
 {
+    await Task.Delay(millisecondsTimeout);
+    return true;
+}
+
+async Task<bool> DelaySyncAndAsync(int millisecondsTimeout)
+{
+    Thread.Sleep(millisecondsTimeout);
     await Task.Delay(millisecondsTimeout);
     return true;
 }
