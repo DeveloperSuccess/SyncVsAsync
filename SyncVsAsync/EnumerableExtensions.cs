@@ -29,9 +29,9 @@
             var partitionedSource = source.Partition(chunkSize);
 
             if (inNewThreads == false)            
-                return partitionedSource.Select(async _ => await Task.WhenAll(_)).SelectMany(_ => _.Result).ToList();
+                return partitionedSource.Select(async _ => await _.WhenAllAsync()).SelectMany(_ => _.Result).ToList();
 
-            return partitionedSource.Select(async _ => await Task.Run(async () => await Task.WhenAll(_)))
+            return partitionedSource.Select(async _ => await Task.Run(async () => await _.WhenAllAsync()))
                 .SelectMany(_ => _.Result).ToList();
         }
     }
